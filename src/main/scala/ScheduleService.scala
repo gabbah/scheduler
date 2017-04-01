@@ -15,21 +15,20 @@ case class Title(value: String){
 }
 
 case class FinchScheduleService() {
-
-  private val newSession  = post( "sessions" :: jsonBody[Title] )                             { createSession }
-  private val getTopics   = get ( sessionEndpoint :: "topics" )                               { listTopics    }
-  private val makeTopic   = post( sessionEndpoint :: "topics" :: jsonBody[Topic])             { createTopic   }
-  private val vote        = put ( sessionEndpoint :: "votes"  :: userId :: jsonBody[Vote])    { placeVote     }
-
-  private def sessionEndpoint = "sessions" :: sessionId
   private val userId: Endpoint[UserId] = uuid.map(UserId)
   private val sessionId: Endpoint[SessionId] = uuid.map(SessionId)
+
+  val api =
+    post("sessions" :: jsonBody[Title] )                                     { createSession }  :+:
+    get ("sessions" :: sessionId :: "topics" )                               { listTopics    }  :+:
+    post("sessions" :: sessionId :: "topics" :: jsonBody[Topic])             { createTopic   }  :+:
+    put ("sessions" :: sessionId :: "votes"  :: userId :: jsonBody[Vote])    { placeVote     }
+
 
   private def createSession = (title: Title) => Ok(Session(UUID.randomUUID(), title))
   private def createTopic = (sessionId: SessionId, topic: Topic) => Ok()
   private def listTopics = (sessionId: SessionId) => Ok(Seq.empty[Topic])
   private def placeVote = (sessionId: SessionId, userId: UserId, vote: Vote) => Ok()
 
-  val api =  newSession :+: getTopics :+: makeTopic :+: vote
 
 }
