@@ -5,10 +5,9 @@ import com.twitter.finagle.http.Status
 import io.circe.generic.auto._
 import io.finch.circe._
 import io.finch._
-import shapeless.HNil
 
-case class Test(content: String)
-case class Session(id: UUID, title: Title, owner: UserId)
+case class Resource(id: UUID, name: String)
+case class Session(id: UUID, title: Title, owner: UserId, resources: Seq[Resource], timeSlots: Int)
 case class Topic(id: UUID, title: Title, description: String)
 case class Vote(user: UserId, list: Seq[Topic])
 case class UserId(id: UUID)
@@ -17,15 +16,15 @@ case class Title(title: String){
   assert(title.length < 50)
 }
 
-case class CreateSessionPayload(userId: UserId, title: Title)
+case class CreateSessionPayload(userId: UUID, title: String, resources: Seq[String], timeSlots: Int)
 sealed trait SessionStatus
 case object Locked extends SessionStatus
 case object Open extends SessionStatus
 case class Schema()
 
 case class FinchScheduleService() {
-  private val userId = uuid.as[UserId]
-  private val session = "sessions" :: uuid.as[SessionId]
+  val userId = uuid.as[UserId]
+  val session = "sessions" :: uuid.as[SessionId]
 
   val api =
     post("sessions" :: jsonBody[CreateSessionPayload] )      { createSession     } :+:
@@ -37,13 +36,19 @@ case class FinchScheduleService() {
     put (session :: "votes"  :: userId :: jsonBody[Vote])    { placeVote         }
 
 
-  private def createSession = (payload: CreateSessionPayload) => Ok(Session(UUID.randomUUID(), payload.title, owner = payload.userId))
-  private def getSessionStatus = (sessionId: SessionId) => Output.unit(Status.Locked)
-  private def setSessionStatus = (sessionId: SessionId, status: Status) => Ok()
-  private def getSchema = (sessionId: SessionId) =>  Output.unit(Status.Locked)
-  private def createTopic = (sessionId: SessionId, topic: Topic) => Ok()
-  private def listTopics = (sessionId: SessionId) => Ok(Seq.empty[Topic])
-  private def placeVote = (sessionId: SessionId, userId: UserId, vote: Vote) => Ok()
+  def createSession = (payload: CreateSessionPayload) => Ok(Session(
+    UUID.randomUUID(),
+    Title(payload.title),
+    owner = UserId(payload.userId),
+    payload.resources.map(Resource(UUID.randomUUID(), _)),
+    payload.timeSlots)
+  )
+  def getSessionStatus = (sessionId: SessionId) => Output.unit(Status.Locked)
+  def setSessionStatus = (sessionId: SessionId, status: Status) => Ok()
+  def getSchema = (sessionId: SessionId) =>  Output.unit(Status.Locked)
+  def createTopic = (sessionId: SessionId, topic: Topic) => Ok()
+  def listTopics = (sessionId: SessionId) => Ok(Seq.empty[Topic])
+  def placeVote = (sessionId: SessionId, userId: UserId, vote: Vote) => Ok()
 
 
 }
