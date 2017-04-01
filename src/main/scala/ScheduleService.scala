@@ -29,6 +29,7 @@ case class FinchScheduleService() {
   val api =
     post("sessions" :: jsonBody[CreateSessionPayload] )       { createSession     } :+:
     get (sessionE :: "status")                                { getSessionStatus  } :+:
+    put (sessionE :: "status" :: jsonBody[Status])            { setSessionStatus  } :+:
     get (sessionE :: "topics" )                               { listTopics        } :+:
     post(sessionE :: "topics" :: jsonBody[Topic])             { createTopic       } :+:
     put (sessionE :: "votes"  :: userId :: jsonBody[Vote])    { placeVote         }
@@ -36,6 +37,7 @@ case class FinchScheduleService() {
 
   private def createSession = (payload: CreateSessionPayload) => Ok(Session(UUID.randomUUID(), payload.title, owner = payload.userId))
   private def getSessionStatus = (sessionId: SessionId) => Ok(Locked)
+  private def setSessionStatus = (sessionId: SessionId, status: Status) => Ok()
   private def createTopic = (sessionId: SessionId, topic: Topic) => Ok()
   private def listTopics = (sessionId: SessionId) => Ok(Seq.empty[Topic])
   private def placeVote = (sessionId: SessionId, userId: UserId, vote: Vote) => Ok()
