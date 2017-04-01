@@ -2,14 +2,15 @@
 import java.util.UUID
 
 import com.twitter.finagle.http.Status
+import com.twitter.util.Future
 import io.circe.generic.auto._
 import io.finch.circe._
 import io.finch._
 
 case class Resource(id: UUID, name: String)
-case class Session(id: UUID, title: Title, owner: UserId, resources: Seq[Resource], timeSlots: Int)
+case class Session(id: UUID, title: Title, owner: UserId, resources: Seq[Resource], timeSlots: Int, status: SessionStatus)
 case class Topic(id: UUID, title: Title, description: String)
-case class Vote(user: UserId, list: Seq[Topic])
+case class Vote(userId: UserId, list: Seq[Topic])
 case class UserId(id: UUID)
 case class SessionId(id: UUID)
 case class Title(title: String){
@@ -36,19 +37,20 @@ case class FinchScheduleService() {
     put (session :: "votes"  :: userId :: jsonBody[Vote])    { placeVote         }
 
 
-  def createSession = (payload: CreateSessionPayload) => Ok(Session(
+  def createSession = (payload: CreateSessionPayload) => Future(Ok(Session(
     UUID.randomUUID(),
     Title(payload.title),
     owner = UserId(payload.userId),
     payload.resources.map(Resource(UUID.randomUUID(), _)),
-    payload.timeSlots)
-  )
-  def getSessionStatus = (sessionId: SessionId) => Output.unit(Status.Locked)
-  def setSessionStatus = (sessionId: SessionId, status: Status) => Ok()
-  def getSchema = (sessionId: SessionId) =>  Output.unit(Status.Locked)
-  def createTopic = (sessionId: SessionId, topic: Topic) => Ok()
-  def listTopics = (sessionId: SessionId) => Ok(Seq.empty[Topic])
-  def placeVote = (sessionId: SessionId, userId: UserId, vote: Vote) => Ok()
+    payload.timeSlots,
+    Open)
+  ))
+  def getSessionStatus = (sessionId: SessionId) => Future(Output.unit(Status.Locked))
+  def setSessionStatus = (sessionId: SessionId, status: Status) => Future(Ok())
+  def getSchema = (sessionId: SessionId) =>  Future(Output.unit(Status.Locked))
+  def createTopic = (sessionId: SessionId, topic: Topic) => Future(Ok())
+  def listTopics = (sessionId: SessionId) => Future(Ok(Seq.empty[Topic]))
+  def placeVote = (sessionId: SessionId, userId: UserId, vote: Vote) => Future(Ok())
 
 
 }
