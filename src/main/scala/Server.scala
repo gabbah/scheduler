@@ -9,7 +9,8 @@ object Server extends App {
   val port = 8080
   val cassandraSession = PersistentStorage.setupCassandra
 
-  val service = FinchScheduleService()
+  val repo = Repository
+  val service = FinchScheduleService(repo)
 
   val server = Http
     .server

@@ -2,7 +2,7 @@ CREATE TABLE sessions (
   id uuid,
   owner uuid,
   title varchar,
-  resources list<text>,
+  resources map<uuid, text>,
   timeSlots int,
   status varchar,
   PRIMARY KEY(id)

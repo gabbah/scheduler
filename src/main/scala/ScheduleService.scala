@@ -23,7 +23,7 @@ case object Locked extends SessionStatus
 case object Open extends SessionStatus
 case class Schema()
 
-case class FinchScheduleService() {
+case class FinchScheduleService(repo: Repository) {
   val userId = uuid.as[UserId]
   val session = "sessions" :: uuid.as[SessionId]
 
@@ -37,14 +37,15 @@ case class FinchScheduleService() {
     put (session :: "votes"  :: userId :: jsonBody[Vote])    { placeVote         }
 
 
-  def createSession = (payload: CreateSessionPayload) => Future(Ok(Session(
-    UUID.randomUUID(),
-    Title(payload.title),
-    owner = UserId(payload.userId),
-    payload.resources.map(Resource(UUID.randomUUID(), _)),
-    payload.timeSlots,
-    Open)
-  ))
+  def createSession = (payload: CreateSessionPayload) => repo.sessions.store(
+    Session(
+      UUID.randomUUID(),
+      Title(payload.title),
+      owner = UserId(payload.userId),
+      payload.resources.map(Resource(UUID.randomUUID(), _)),
+      payload.timeSlots,
+      Open)
+  ).map( r => Ok()  )
   def getSessionStatus = (sessionId: SessionId) => Future(Output.unit(Status.Locked))
   def setSessionStatus = (sessionId: SessionId, status: Status) => Future(Ok())
   def getSchema = (sessionId: SessionId) =>  Future(Output.unit(Status.Locked))
