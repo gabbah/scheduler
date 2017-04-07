@@ -37,7 +37,7 @@ case class FinchScheduleService(repo: Repository) {
     put (session :: "votes"  :: userId :: jsonBody[Vote])    { placeVote         }
 
 
-  def createSession = (payload: CreateSessionPayload) => repo.sessions.store(
+  def createSession = (payload: CreateSessionPayload) => repo.store(
     Session(
       UUID.randomUUID(),
       Title(payload.title),
@@ -45,7 +45,7 @@ case class FinchScheduleService(repo: Repository) {
       payload.resources.map(Resource(UUID.randomUUID(), _)),
       payload.timeSlots,
       Open)
-  ).map( r => Ok()  )
+  ).map(_ =>  Ok() ) //.rescue(Future(Conflict(_)))
   def getSessionStatus = (sessionId: SessionId) => Future(Output.unit(Status.Locked))
   def setSessionStatus = (sessionId: SessionId, status: Status) => Future(Ok())
   def getSchema = (sessionId: SessionId) =>  Future(Output.unit(Status.Locked))
