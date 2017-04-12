@@ -35,6 +35,14 @@ class Topics extends CassandraTable[Topics, Topic] {
   object id extends UUIDColumn(this) with PrimaryKey
   object title extends StringColumn(this)
   object description extends StringColumn(this)
+
+  override def fromRow(r: Row): Topic =
+  Topic(
+    id(r),
+    session_id(r),
+    Title(title(r)),
+    description(r)
+  )
 }
 
 abstract class MySessionsTable extends Sessions with RootConnector
@@ -69,8 +77,11 @@ class Repository(override val connector: KeySpaceDef) extends Database[Repositor
 
   }
 
-  def get(sessionId: UUID): util.Future[Option[Session]] =
+  def getSession(sessionId: UUID): util.Future[Option[Session]] =
     sessions.select.where(_.id eqs sessionId).get()
+
+  def getTopics(sessionId: SessionId): util.Future[List[Topic]] =
+    topics.select.where(_.session_id eqs sessionId.id).collect()
 }
 
 object Repository extends Repository(Defaults.connector)

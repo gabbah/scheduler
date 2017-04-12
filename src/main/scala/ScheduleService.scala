@@ -54,11 +54,11 @@ case class FinchScheduleService(repo: Repository) {
   def getSessionStatus = (sessionId: SessionId) => Future(Output.unit(Status.Locked))
   def setSessionStatus = (sessionId: SessionId, status: Status) => Future(Ok())
   def getSchema = (sessionId: SessionId) =>  Future(Output.unit(Status.Locked))
-  def createTopic = (sessionId: SessionId, payload: CreateTopicPayload) => repo.get(sessionId.id) flatMap {
+  def createTopic = (sessionId: SessionId, payload: CreateTopicPayload) => repo.getSession(sessionId.id) flatMap {
       case Some(_) => repo.store(Topic(UUID.randomUUID(), sessionId.id, Title(payload.title) , payload.description)).map(Ok)
       case None => Future(NotFound(new IllegalArgumentException("session not found")))
     }
-  def listTopics = (sessionId: SessionId) => Future(Ok(Seq.empty[Topic]))
+  def listTopics = (sessionId: SessionId) => repo.getTopics(sessionId).map(list =>  Ok(list) )
   def placeVote = (sessionId: SessionId, userId: UserId, vote: Vote) => Future(Ok())
 
 
