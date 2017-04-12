@@ -9,7 +9,7 @@ import io.finch._
 
 case class Resource(id: UUID, name: String)
 case class Session(id: UUID, title: Title, owner: UserId, resources: Seq[Resource], timeSlots: Int, status: SessionStatus)
-case class Topic(id: UUID, title: Title, description: String)
+case class Topic(id: UUID, sessionId: UUID, title: Title, description: String)
 case class Vote(userId: UserId, list: Seq[Topic])
 case class UserId(id: UUID)
 case class SessionId(id: UUID)
@@ -18,6 +18,8 @@ case class Title(title: String){
 }
 
 case class CreateSessionPayload(userId: UUID, title: String, resources: Seq[String], timeSlots: Int)
+case class CreateTopicPayload(title: String, description: String)
+
 sealed trait SessionStatus
 case object Locked extends SessionStatus
 case object Open extends SessionStatus
@@ -33,7 +35,7 @@ case class FinchScheduleService(repo: Repository) {
     get (session :: "schema")                                { getSchema         } :+:
     put (session :: "status" :: jsonBody[Status])            { setSessionStatus  } :+:
     get (session :: "topics" )                               { listTopics        } :+:
-    post(session :: "topics" :: jsonBody[Topic])             { createTopic       } :+:
+    post(session :: "topics" :: jsonBody[CreateTopicPayload]){ createTopic       } :+:
     put (session :: "votes"  :: userId :: jsonBody[Vote])    { placeVote         }
 
 
@@ -45,11 +47,17 @@ case class FinchScheduleService(repo: Repository) {
       payload.resources.map(Resource(UUID.randomUUID(), _)),
       payload.timeSlots,
       Open)
-  ).map(_ =>  Ok() ) //.rescue(Future(Conflict(_)))
+  ).map{
+    case session =>  Ok(session)
+  }
+
   def getSessionStatus = (sessionId: SessionId) => Future(Output.unit(Status.Locked))
   def setSessionStatus = (sessionId: SessionId, status: Status) => Future(Ok())
   def getSchema = (sessionId: SessionId) =>  Future(Output.unit(Status.Locked))
-  def createTopic = (sessionId: SessionId, topic: Topic) => Future(Ok())
+  def createTopic = (sessionId: SessionId, payload: CreateTopicPayload) => repo.get(sessionId.id) flatMap {
+      case Some(_) => repo.store(Topic(UUID.randomUUID(), sessionId.id, Title(payload.title) , payload.description)).map(Ok)
+      case None => Future(NotFound(new IllegalArgumentException("session not found")))
+    }
   def listTopics = (sessionId: SessionId) => Future(Ok(Seq.empty[Topic]))
   def placeVote = (sessionId: SessionId, userId: UserId, vote: Vote) => Future(Ok())
 
