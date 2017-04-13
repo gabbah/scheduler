@@ -45,14 +45,24 @@ class Topics extends CassandraTable[Topics, Topic] {
   )
 }
 
+class Votes extends CassandraTable[Votes, Vote] {
+  object session_id extends UUIDColumn(this) with PartitionKey
+  object user_id extends UUIDColumn(this) with PrimaryKey
+  object topic_ids extends ListColumn[UUID](this)
+
+  override def fromRow(r: Row): Vote = super.fromRow(r)
+}
+
 abstract class MySessionsTable extends Sessions with RootConnector
 abstract class MyTopicsTable extends Topics with RootConnector
+abstract class MyVotesTable extends Votes with RootConnector
 
 class Repository(override val connector: KeySpaceDef) extends Database[Repository](connector) {
   implicit val s = connector.session
 
   object sessions extends MySessionsTable with connector.Connector
   object topics extends MyTopicsTable with connector.Connector
+  object votes extends MyVotesTable with connector.Connector
 
   def store(session: Session): Future[Session] = {
     sessions.insert
@@ -74,7 +84,15 @@ class Repository(override val connector: KeySpaceDef) extends Database[Repositor
     .value(_.description, topic.description)
     .execute()
     .map { case r: ResultSet => topic}
+  }
 
+  def store(vote: Vote): Future[Unit] = {
+    votes.insert()
+    .value(_.session_id, vote.sessionId)
+    .value(_.user_id, vote.userId)
+    .value(_.topic_ids, vote.topicIds.toList)
+    .execute()
+    Future.Unit
   }
 
   def getSession(sessionId: UUID): util.Future[Option[Session]] =

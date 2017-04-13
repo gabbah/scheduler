@@ -20,6 +20,6 @@ CREATE TABLE topics (
 CREATE TABLE votes (
   session_id uuid,
   user_id uuid,
-  topic_id uuid,
-  PRIMARY KEY(session_id)
+  topic_ids list<uuid>,
+  PRIMARY KEY(session_id, user_id)
 );
