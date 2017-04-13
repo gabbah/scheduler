@@ -31,9 +31,9 @@ case class FinchScheduleService(repo: Repository) {
 
   val api =
     post("sessions" :: jsonBody[CreateSessionPayload] )      { createSession     } :+:
-//    get (session :: "status")                                { getSessionStatus  } :+:
+//  get (session :: "status")                                { getSessionStatus  } :+:
     get (session :: "schema")                                { getSchema         } :+:
-//    put (session :: "status" :: jsonBody[Status])            { setSessionStatus  } :+:
+//  put (session :: "status" :: jsonBody[Status])            { setSessionStatus  } :+:
     get (session :: "topics" )                               { listTopics        } :+:
     post(session :: "topics" :: jsonBody[CreateTopicPayload]){ createTopic       } :+:
     put (session :: "votes"  :: userId :: jsonBody[Vote])    { placeVote         }
