@@ -31,9 +31,9 @@ case class FinchScheduleService(repo: Repository) {
 
   val api =
     post("sessions" :: jsonBody[CreateSessionPayload] )      { createSession     } :+:
-    get (session :: "status")                                { getSessionStatus  } :+:
+//    get (session :: "status")                                { getSessionStatus  } :+:
     get (session :: "schema")                                { getSchema         } :+:
-    put (session :: "status" :: jsonBody[Status])            { setSessionStatus  } :+:
+//    put (session :: "status" :: jsonBody[Status])            { setSessionStatus  } :+:
     get (session :: "topics" )                               { listTopics        } :+:
     post(session :: "topics" :: jsonBody[CreateTopicPayload]){ createTopic       } :+:
     put (session :: "votes"  :: userId :: jsonBody[Vote])    { placeVote         }
@@ -51,8 +51,10 @@ case class FinchScheduleService(repo: Repository) {
     case session =>  Ok(session)
   }
 
-  def getSessionStatus = (sessionId: SessionId) => Future(Output.unit(Status.Locked))
-  def setSessionStatus = (sessionId: SessionId, status: Status) => Future(Ok())
+//  def getSessionStatus = (sessionId: SessionId) => repo.getSession(sessionId.id) map {
+//    case Some(session) => Ok(session.status)
+//  }
+//  def setSessionStatus = (sessionId: SessionId, status: Status) => Future(Ok())
   def getSchema = (sessionId: SessionId) =>  Future(Output.unit(Status.Locked))
   def createTopic = (sessionId: SessionId, payload: CreateTopicPayload) => repo.getSession(sessionId.id) flatMap {
       case Some(_) => repo.store(Topic(UUID.randomUUID(), sessionId.id, Title(payload.title) , payload.description)).map(Ok)
